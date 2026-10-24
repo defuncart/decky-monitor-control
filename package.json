@@ -1,7 +1,7 @@
 {
-  "name": "decky-plugin-template",
+  "name": "decky-monitor-control",
   "version": "0.0.1",
-  "description": "A template to quickly create decky plugins from scratch, based on TypeScript and webpack",
+  "description": "A decky plugin to control the attached monitor.",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
@@ -15,7 +15,9 @@
   "keywords": [
     "decky",
     "plugin",
-    "plugin-template",
+    "monitor",
+    "brightness",
+    "control",
     "steam-deck",
     "deck"
   ],
