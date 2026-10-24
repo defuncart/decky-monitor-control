@@ -38,6 +38,14 @@ class Plugin:
     async def getBrightness(self):
         return await self._run("getvcp", "10")
 
+    async def getInputSource(self):
+        return await self._run("getvcp", "60")
+
+    async def setInputSource(self, value: int):
+        value = int(value)
+        await self._run("setvcp", "60", hex(value))
+        return {"success": True, "input": value}
+
     async def setBrightness(self, value: int):
         value = max(0, min(100, int(value)))
         await self._run("setvcp", "10", str(value))
