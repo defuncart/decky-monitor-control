@@ -19,6 +19,14 @@ const setBrightness =
     "setBrightness"
   );
 
+const getContrast =
+  callable<[], string>("getContrast");
+
+const setContrast =
+  callable<[value: number], { success: boolean; contrast: number }>(
+    "setContrast"
+  );
+
 const getInputSource =
   callable<[], string>("getInputSource");
 
@@ -36,8 +44,10 @@ const INPUT_SOURCES = [
 
 function Content() {
   const [brightness, setValue] = useState(50);
+  const [contrast, setContrastValue] = useState<number | null>(null);
   const [input, setInput] = useState<number | null>(null);
-  const [status, setStatus] = useState("Reading brightness…");
+  const [statusBrightness, setStatusBrightness] = useState("Reading brightness…");
+  const [statusContrast, setStatusContrast] = useState("Reading contrast…");
 
   async function refresh() {
     try {
@@ -46,12 +56,38 @@ function Content() {
       if (match) {
         const current = Number(match[1]);
         setValue(current);
-        setStatus(`Brightness: ${current}%`);
+        setStatusBrightness(`Brightness: ${current}%`);
       } else {
-        setStatus(result);
+        setStatusBrightness(result);
       }
     } catch (error) {
-      setStatus(String(error));
+      setStatusBrightness(String(error));
+    }
+  }
+
+  async function refreshContrast() {
+    try {
+      const result = await getContrast();
+      const match = result.match(/current value =\s*(\d+)/);
+      if (match) {
+        const current = Number(match[1]);
+        setContrastValue(current);
+        setStatusContrast(`Contrast: ${current}%`);
+      } else {
+        setStatusContrast(result);
+      }
+    } catch (error) {
+      setStatusContrast(String(error));
+    }
+  }
+
+  async function changeContrast(value: number) {
+    try {
+      const result = await setContrast(value);
+      setContrastValue(result.contrast);
+      setStatusContrast(`Contrast: ${result.contrast}%`);
+    } catch (error) {
+      setStatusContrast(String(error));
     }
   }
 
@@ -63,12 +99,13 @@ function Content() {
         setInput(parseInt(match[1], 16));
       }
     } catch (error) {
-      setStatus(String(error));
+      console.error("DDCutil: failed to read input source", error);
     }
   }
 
   useEffect(() => {
     refresh();
+    refreshContrast();
     refreshInput();
   }, []);
 
@@ -76,9 +113,8 @@ function Content() {
     try {
       const result = await setInputSource(value);
       setInput(result.input);
-      setStatus(`Input: ${INPUT_SOURCES.find((s) => s.value === result.input)?.label}`);
     } catch (error) {
-      setStatus(String(error));
+      console.error("DDCutil: failed to set input source", error);
     }
   }
 
@@ -87,9 +123,9 @@ function Content() {
     try {
       const result = await setBrightness(value);
       setValue(result.brightness);
-      setStatus(`Brightness: ${result.brightness}%`);
+      setStatusBrightness(`Brightness: ${result.brightness}%`);
     } catch (error) {
-      setStatus(String(error));
+      setStatusBrightness(String(error));
     }
   }
 
@@ -98,7 +134,7 @@ function Content() {
       <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <PanelSectionRow>
-            <div>{status}</div>
+            <div>{statusBrightness}</div>
           </PanelSectionRow>
 
           <PanelSectionRow>
@@ -117,6 +153,22 @@ function Content() {
                 { label: "−10", onClick: () => change(brightness - 10) },
                 { label: "+10", onClick: () => change(brightness + 10) },
               ]}
+            />
+          </PanelSectionRow>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <PanelSectionRow>
+            <div>{statusContrast}</div>
+          </PanelSectionRow>
+
+          <PanelSectionRow>
+            <SegmentedRow
+              options={[0, 25, 50, 75, 100].map((value) => ({
+                label: String(value),
+                onClick: () => changeContrast(value),
+                active: contrast === value,
+              }))}
             />
           </PanelSectionRow>
         </div>
